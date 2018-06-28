@@ -183,6 +183,8 @@
       'atom/browser/api/event_emitter.h',
       'atom/browser/api/event_subscriber.cc',
       'atom/browser/api/event_subscriber.h',
+      'atom/browser/api/gpu_info_enumerator.h',
+      'atom/browser/api/gpu_info_enumerator.cc',
       'atom/browser/api/trackable_object.cc',
       'atom/browser/api/trackable_object.h',
       'atom/browser/api/frame_subscriber.cc',

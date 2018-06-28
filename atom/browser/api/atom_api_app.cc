@@ -10,6 +10,7 @@
 #include "atom/browser/api/atom_api_menu.h"
 #include "atom/browser/api/atom_api_session.h"
 #include "atom/browser/api/atom_api_web_contents.h"
+#include "atom/browser/api/gpu_info_enumerator.h"
 #include "atom/browser/atom_browser_context.h"
 #include "atom/browser/atom_browser_main_parts.h"
 #include "atom/browser/login_handler.h"
@@ -1162,6 +1163,14 @@ v8::Local<v8::Value> App::GetGPUFeatureStatus(v8::Isolate* isolate) {
   return mate::ConvertToV8(isolate, status ? *status : temp);
 }
 
+v8::Local<v8::Value> App::GetGPUInfo(v8::Isolate* isolate) {
+  const auto& gpu_info =
+      content::GpuDataManagerImpl::GetInstance()->GetGPUInfo();
+  GPUInfoEnumerator enumerator;
+  gpu_info.EnumerateFields(&enumerator);
+  return mate::ConvertToV8(isolate, *enumerator.GetDictionary());
+}
+
 void App::EnableMixedSandbox(mate::Arguments* args) {
   if (Browser::Get()->is_ready()) {
     args->ThrowError(
@@ -1284,6 +1293,7 @@ void App::BuildPrototype(v8::Isolate* isolate,
       .SetMethod("getFileIcon", &App::GetFileIcon)
       .SetMethod("getAppMetrics", &App::GetAppMetrics)
       .SetMethod("getGPUFeatureStatus", &App::GetGPUFeatureStatus)
+      .SetMethod("getGPUInfo", &App::GetGPUInfo)
 // TODO(juturu): Remove in 2.0, deprecate before then with warnings
 #if defined(OS_MACOSX)
       .SetMethod("moveToApplicationsFolder", &App::MoveToApplicationsFolder)
