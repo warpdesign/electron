@@ -549,6 +549,7 @@ App::App(v8::Isolate* isolate) {
   static_cast<AtomBrowserClient*>(AtomBrowserClient::Get())->set_delegate(this);
   Browser::Get()->AddObserver(this);
   content::GpuDataManager::GetInstance()->AddObserver(this);
+  has_complete_gpu_info_ = false;
   base::ProcessId pid = base::GetCurrentProcId();
   auto process_metric = std::make_unique<atom::ProcessMetric>(
       content::PROCESS_TYPE_BROWSER, pid,
@@ -773,6 +774,18 @@ void App::SelectClientCertificate(
 void App::OnGpuProcessCrashed(base::TerminationStatus status) {
   Emit("gpu-process-crashed",
        status == base::TERMINATION_STATUS_PROCESS_WAS_KILLED);
+}
+
+void App::OnGpuInfoUpdate() {
+  if (gpu_callback_) {
+    has_complete_gpu_info_ = true;
+    const auto& gpu_info =
+        content::GpuDataManagerImpl::GetInstance()->GetGPUInfo();
+    GPUInfoEnumerator enumerator;
+    gpu_info.EnumerateFields(&enumerator);
+    gpu_callback_.Run(
+        mate::ConvertToV8(isolate(), *enumerator.GetDictionary()));
+  }
 }
 
 void App::BrowserChildProcessLaunchedAndConnected(
@@ -1163,12 +1176,18 @@ v8::Local<v8::Value> App::GetGPUFeatureStatus(v8::Isolate* isolate) {
   return mate::ConvertToV8(isolate, status ? *status : temp);
 }
 
-v8::Local<v8::Value> App::GetGPUInfo(v8::Isolate* isolate) {
-  const auto& gpu_info =
-      content::GpuDataManagerImpl::GetInstance()->GetGPUInfo();
-  GPUInfoEnumerator enumerator;
-  gpu_info.EnumerateFields(&enumerator);
-  return mate::ConvertToV8(isolate, *enumerator.GetDictionary());
+void App::GetGPUInfo(v8::Isolate* isolate, mate::Arguments* args) {
+  if (!args->GetNext(&gpu_callback_)) {
+    args->ThrowError("Missing required callback function");
+    return;
+  }
+  const auto gpu_data_manager = content::GpuDataManagerImpl::GetInstance();
+  if (gpu_data_manager->GpuAccessAllowed(nullptr)) {
+    if (has_complete_gpu_info_)
+      OnGpuInfoUpdate();
+    else
+      gpu_data_manager->RequestCompleteGpuInfoIfNeeded();
+  }
 }
 
 void App::EnableMixedSandbox(mate::Arguments* args) {
