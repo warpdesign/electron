@@ -831,6 +831,18 @@ describe('app module', () => {
     })
   })
 
+  describe('getGPUInfo() API', () => {
+    it('returns valid GPUInfo', () => {
+      app.getGPUInfo((gpuInfo) => {
+        const activeDevice = gpuInfo.gpuDevice.find((device) => {
+          return device.active === true
+        })
+        expect(activeDevice).to.not.be.null()
+        expect(activeDevice.deviceId).to.be.a('number').not.lessThan(0)
+      })
+    })
+  })
+
   describe('mixed sandbox option', () => {
     let appProcess = null
     let server = null
