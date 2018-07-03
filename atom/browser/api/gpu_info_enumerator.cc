@@ -18,7 +18,8 @@ void GPUInfoEnumerator::AddInt(const char* name, int value) {
 }
 
 void GPUInfoEnumerator::AddString(const char* name, const std::string& value) {
-  current->SetString(name, value);
+  if (!value.empty())
+    current->SetString(name, value);
 }
 
 void GPUInfoEnumerator::AddBool(const char* name, bool value) {
