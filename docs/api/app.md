@@ -904,12 +904,14 @@ Returns [`ProcessMetric[]`](structures/process-metric.md): Array of `ProcessMetr
 
 Returns [`GPUFeatureStatus`](structures/gpu-feature-status.md) - The Graphics Feature Status from `chrome://gpu/`.
 
-### `app.getGPUInfo(callback)`
+### `app.getGPUInfo([callback])`
 
-Returns GPU Information available in chromium's GPUInfo object. It's contains the version and driver information that's shown on `chrome://gpu`.
+Returns `Object` - GPU Information available in chromium's GPUInfo object. It's contains the version and driver information that's shown on `chrome://gpu` page.
 
-* `callback` Function
+* `callback` Function (optional)
   * `gpuInfo` Object - List of all attributes and values available in [chromium's GPUInfo object](https://chromium.googlesource.com/chromium/src/gpu/+/master/config/gpu_info.cc).
+
+Providing the optional callback will fetch the complete information available from the GPU process. In this case, the callback object will have all the available information, which can be more that what the returned object had.
 
 ### `app.setBadgeCount(count)` _Linux_ _macOS_
 

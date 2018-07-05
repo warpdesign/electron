@@ -1176,18 +1176,19 @@ v8::Local<v8::Value> App::GetGPUFeatureStatus(v8::Isolate* isolate) {
   return mate::ConvertToV8(isolate, status ? *status : temp);
 }
 
-void App::GetGPUInfo(v8::Isolate* isolate, mate::Arguments* args) {
-  if (!args->GetNext(&gpu_callback_)) {
-    args->ThrowError("Missing required callback function");
-    return;
-  }
+v8::Local<v8::Value> App::GetGPUInfo(v8::Isolate* isolate,
+                                     mate::Arguments* args) {
+  args->GetNext(&gpu_callback_);
   const auto gpu_data_manager = content::GpuDataManagerImpl::GetInstance();
-  if (gpu_data_manager->GpuAccessAllowed(nullptr)) {
-    if (has_complete_gpu_info_)
-      OnGpuInfoUpdate();
-    else
-      gpu_data_manager->RequestCompleteGpuInfoIfNeeded();
-  }
+  if (!gpu_data_manager->GpuAccessAllowed(nullptr))
+    return mate::ConvertToV8(isolate, base::DictionaryValue());
+  if (has_complete_gpu_info_ && gpu_callback_)
+    OnGpuInfoUpdate();
+  else if (!has_complete_gpu_info_ && gpu_callback_)
+    gpu_data_manager->RequestCompleteGpuInfoIfNeeded();
+  GPUInfoEnumerator enumerator;
+  gpu_data_manager->GetGPUInfo().EnumerateFields(&enumerator);
+  return mate::ConvertToV8(isolate, *enumerator.GetDictionary());
 }
 
 void App::EnableMixedSandbox(mate::Arguments* args) {
