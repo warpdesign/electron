@@ -550,6 +550,8 @@ App::App(v8::Isolate* isolate) {
   Browser::Get()->AddObserver(this);
   content::GpuDataManager::GetInstance()->AddObserver(this);
   has_complete_gpu_info_ = false;
+  is_fetching_gpuinfo_ = false;
+  gpuinfo_promise_ = nullptr;
   base::ProcessId pid = base::GetCurrentProcId();
   auto process_metric = std::make_unique<atom::ProcessMetric>(
       content::PROCESS_TYPE_BROWSER, pid,
@@ -777,15 +779,17 @@ void App::OnGpuProcessCrashed(base::TerminationStatus status) {
 }
 
 void App::OnGpuInfoUpdate() {
-  if (gpu_callback_) {
-    has_complete_gpu_info_ = true;
-    const auto& gpu_info =
-        content::GpuDataManagerImpl::GetInstance()->GetGPUInfo();
-    GPUInfoEnumerator enumerator;
-    gpu_info.EnumerateFields(&enumerator);
-    gpu_callback_.Run(
-        mate::ConvertToV8(isolate(), *enumerator.GetDictionary()));
-  }
+  // Ignore if called when not asked for complete GPUInfo
+  if (!is_fetching_gpuinfo_)
+    return;
+  has_complete_gpu_info_ = true;
+  CHECK(gpuinfo_promise_);
+  const auto& gpu_info =
+      content::GpuDataManagerImpl::GetInstance()->GetGPUInfo();
+  GPUInfoEnumerator enumerator;
+  gpu_info.EnumerateFields(&enumerator);
+  gpuinfo_promise_->Resolve(*enumerator.GetDictionary());
+  is_fetching_gpuinfo_ = false;
 }
 
 void App::BrowserChildProcessLaunchedAndConnected(
@@ -1176,19 +1180,24 @@ v8::Local<v8::Value> App::GetGPUFeatureStatus(v8::Isolate* isolate) {
   return mate::ConvertToV8(isolate, status ? *status : temp);
 }
 
-v8::Local<v8::Value> App::GetGPUInfo(v8::Isolate* isolate,
-                                     mate::Arguments* args) {
-  args->GetNext(&gpu_callback_);
+util::Promise* App::GetGPUInfo(const std::string& info_type) {
+  CHECK(!is_fetching_gpuinfo_);
+  gpuinfo_promise_ = new util::Promise(isolate());
   const auto gpu_data_manager = content::GpuDataManagerImpl::GetInstance();
-  if (!gpu_data_manager->GpuAccessAllowed(nullptr))
-    return mate::ConvertToV8(isolate, base::DictionaryValue());
-  if (has_complete_gpu_info_ && gpu_callback_)
-    OnGpuInfoUpdate();
-  else if (!has_complete_gpu_info_ && gpu_callback_)
+  if (!gpu_data_manager->GpuAccessAllowed(nullptr)) {
+    gpuinfo_promise_->Reject();
+    return gpuinfo_promise_;
+  }
+  if (info_type == "complete" && !has_complete_gpu_info_) {
+    is_fetching_gpuinfo_ = true;
     gpu_data_manager->RequestCompleteGpuInfoIfNeeded();
-  GPUInfoEnumerator enumerator;
-  gpu_data_manager->GetGPUInfo().EnumerateFields(&enumerator);
-  return mate::ConvertToV8(isolate, *enumerator.GetDictionary());
+    return gpuinfo_promise_;
+  } else /* (info_type == "available" || has_complete_gpu_info_) */ {
+    GPUInfoEnumerator enumerator;
+    gpu_data_manager->GetGPUInfo().EnumerateFields(&enumerator);
+    gpuinfo_promise_->Resolve(*enumerator.GetDictionary());
+    return gpuinfo_promise_;
+  }
 }
 
 void App::EnableMixedSandbox(mate::Arguments* args) {

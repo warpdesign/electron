@@ -904,14 +904,13 @@ Returns [`ProcessMetric[]`](structures/process-metric.md): Array of `ProcessMetr
 
 Returns [`GPUFeatureStatus`](structures/gpu-feature-status.md) - The Graphics Feature Status from `chrome://gpu/`.
 
-### `app.getGPUInfo([callback])`
+### `app.getGPUInfo(info_type)`
 
-Returns `Object` - GPU Information available in chromium's GPUInfo object. It's contains the version and driver information that's shown on `chrome://gpu` page.
+* `info_type` String. Values can be either 'available' for currently available info or `complete` for complete info.
 
-* `callback` Function (optional)
-  * `gpuInfo` Object - List of all attributes and values available in [chromium's GPUInfo object](https://chromium.googlesource.com/chromium/src/gpu/+/master/config/gpu_info.cc).
+Returns `Promise<Object>` - GPU Information as in [chromium's GPUInfo object](https://chromium.googlesource.com/chromium/src/gpu/+/master/config/gpu_info.cc). It contains the version and driver information that's shown on `chrome://gpu` page.
 
-Providing the optional callback will fetch the complete information available from the GPU process. In this case, the callback object will have all the available information, which can be more that what the returned object had.
+Object returned for `info_type` equal to `available` may have fewer attributes than when requested with `complete`. It's preferable to use `available` if only basic information like `vendorId` or `driverId` is needed.
 
 ### `app.setBadgeCount(count)` _Linux_ _macOS_
 
