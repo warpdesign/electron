@@ -908,7 +908,7 @@ Returns [`GPUFeatureStatus`](structures/gpu-feature-status.md) - The Graphics Fe
 
 * `info_type` String. Values can be either 'available' for currently available info or `complete` for complete info.
 
-Returns `Promise<Object>` - GPU Information as in [chromium's GPUInfo object](https://chromium.googlesource.com/chromium/src/gpu/+/master/config/gpu_info.cc). It contains the version and driver information that's shown on `chrome://gpu` page.
+Returns `Promise<Object>` - GPU Information as in [chromium's GPUInfo object](https://chromium.googlesource.com/chromium/src.git/+/66.0.3359.181/gpu/config/gpu_info.cc). It contains the version and driver information that's shown on `chrome://gpu` page.
 
 Object returned for `info_type` equal to `available` may have fewer attributes than when requested with `complete`. It's preferable to use `available` if only basic information like `vendorId` or `driverId` is needed.
 

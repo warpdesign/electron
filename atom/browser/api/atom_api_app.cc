@@ -548,7 +548,6 @@ void OnIconDataAvailable(v8::Isolate* isolate,
 App::App(v8::Isolate* isolate) {
   static_cast<AtomBrowserClient*>(AtomBrowserClient::Get())->set_delegate(this);
   Browser::Get()->AddObserver(this);
-  content::GpuDataManager::GetInstance()->AddObserver(this);
   has_complete_gpu_info_ = false;
   is_fetching_gpuinfo_ = false;
   gpuinfo_promise_ = nullptr;
@@ -618,6 +617,7 @@ void App::OnFinishLaunching(const base::DictionaryValue& launch_info) {
   // applications. Only affects pulseaudio currently.
   media::AudioManager::SetGlobalAppName(Browser::Get()->GetName());
 #endif
+  content::GpuDataManager::GetInstance()->AddObserver(this);
   Emit("ready", launch_info);
 }
 
@@ -778,14 +778,29 @@ void App::OnGpuProcessCrashed(base::TerminationStatus status) {
        status == base::TERMINATION_STATUS_PROCESS_WAS_KILLED);
 }
 
+bool App::NeedsCompleteGpuInfoCollection() const {
+  const auto& gpu_info =
+      content::GpuDataManagerImpl::GetInstance()->GetGPUInfo();
+#if defined(OS_MACOSX)
+  return gpu_info.gl_vendor.empty();
+#elif defined(OS_WIN)
+  return (gpu_info.dx_diagnostics.values.empty() &&
+          gpu_info.dx_diagnostics.children.empty());
+#else
+  return false;
+#endif
+}
+
 void App::OnGpuInfoUpdate() {
   // Ignore if called when not asked for complete GPUInfo
+  const auto& gpu_data_manager = content::GpuDataManagerImpl::GetInstance();
+  if (is_fetching_gpuinfo_ && NeedsCompleteGpuInfoCollection())
+    return;
   if (!is_fetching_gpuinfo_)
     return;
   has_complete_gpu_info_ = true;
   CHECK(gpuinfo_promise_);
-  const auto& gpu_info =
-      content::GpuDataManagerImpl::GetInstance()->GetGPUInfo();
+  const auto& gpu_info = gpu_data_manager->GetGPUInfo();
   GPUInfoEnumerator enumerator;
   gpu_info.EnumerateFields(&enumerator);
   gpuinfo_promise_->Resolve(*enumerator.GetDictionary());
@@ -1183,6 +1198,10 @@ v8::Local<v8::Value> App::GetGPUFeatureStatus(v8::Isolate* isolate) {
 util::Promise* App::GetGPUInfo(const std::string& info_type) {
   CHECK(!is_fetching_gpuinfo_);
   gpuinfo_promise_ = new util::Promise(isolate());
+  if (info_type != "available" && info_type != "complete") {
+    gpuinfo_promise_->Reject();
+    return gpuinfo_promise_;
+  }
   const auto gpu_data_manager = content::GpuDataManagerImpl::GetInstance();
   if (!gpu_data_manager->GpuAccessAllowed(nullptr)) {
     gpuinfo_promise_->Reject();

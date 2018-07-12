@@ -832,21 +832,32 @@ describe('app module', () => {
   })
 
   describe('getGPUInfo() API', () => {
-    it('succeeds with short GPUInfo', () => {
-      app.getGPUInfo('short').then((gpuInfo) => {
+    it('succeeds with available GPUInfo', (done) => {
+      app.getGPUInfo('available').then((gpuInfo) => {
         // Devices information is always present in the available info
         const activeDevice = gpuInfo.gpuDevice.find((device) => {
           return device.active === true
         })
-        expect(activeDevice).to.not.be.null()
-        expect(activeDevice.deviceId).to.be.a('number').not.lessThan(0)
+  expect(activeDevice).to.be.an('object')
+  expect(activeDevice)
+      .to.have.property('deviceId')
+      .that.is.a('number')
+      .not.lessThan(0)
+        done()
       })
     })
 
-    it('succeeds with full GPUInfo', () => {
-      app.getGPUInfo('full').then((completeInfo) => {
+    it('succeeds with complete GPUInfo', (done) => {
+      app.getGPUInfo('complete').then((completeInfo) => {
         // Driver version is present in the complete info
-        expect(completeInfo.auxAttributes.driverVersion).to.be.a('string')
+        expect(completeInfo.auxAttributes.driverVersion).to.be.a('string').that.has.length.greaterThan(0)
+        done()
+      })
+    })
+
+    it('fails for invalid info_type', (done) => {
+      app.getGPUInfo('invalid').catch(()=> {
+        done()
       })
     })
   })
