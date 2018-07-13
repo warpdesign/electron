@@ -53,7 +53,6 @@ void GPUInfoManager::FetchCompleteInfo() {
 void GPUInfoManager::FetchAvailableInfo() {
   gpu::GPUInfo gpu_info;
   CollectBasicGraphicsInfo(&gpu_info);
-  LOG(INFO) << "COLLECTING BASIC INO";
   EnumerateGPUInfo(gpu_info);
 }
 
