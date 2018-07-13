@@ -1166,29 +1166,21 @@ v8::Local<v8::Value> App::GetGPUFeatureStatus(v8::Isolate* isolate) {
 
 util::Promise* App::GetGPUInfo(v8::Isolate* isolate,
                                const std::string& info_type) {
-  if (info_type != "available" && info_type != "complete") {
-    const auto& promise = new util::Promise(isolate);
-    promise->Reject();
-    return promise;
-  }
   const auto gpu_data_manager = content::GpuDataManagerImpl::GetInstance();
-  if (!gpu_data_manager->GpuAccessAllowed(nullptr)) {
-    const auto& promise = new util::Promise(isolate);
+  const auto& promise = new util::Promise(isolate);
+  if ((info_type != "basic" && info_type != "complete") ||
+      !gpu_data_manager->GpuAccessAllowed(nullptr)) {
     promise->Reject();
     return promise;
   }
 
+  const auto& info_mgr = GPUInfoManager::GetInstance();
   if (info_type == "complete") {
-    // In this case, we create an object on the heap and GPUInfoManager is
-    // responsible for deleting it
-    GPUInfoManager* info_mgr = new GPUInfoManager(isolate);
-    info_mgr->FetchCompleteInfo();
-    return info_mgr->Promise();
+    info_mgr->FetchCompleteInfo(promise);
   } else /* (info_type == "available") */ {
-    GPUInfoManager info_mgr(isolate);
-    info_mgr.FetchAvailableInfo();
-    return info_mgr.Promise();
+    info_mgr->FetchBasicInfo(promise);
   }
+  return promise;
 }
 
 void App::EnableMixedSandbox(mate::Arguments* args) {
