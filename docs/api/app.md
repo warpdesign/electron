@@ -904,9 +904,9 @@ Returns [`ProcessMetric[]`](structures/process-metric.md): Array of `ProcessMetr
 
 Returns [`GPUFeatureStatus`](structures/gpu-feature-status.md) - The Graphics Feature Status from `chrome://gpu/`.
 
-### `app.getGPUInfo(info_type)`
+### `app.getGPUInfo(infoType)`
 
-* `info_type` String. Values can be either 'available' for currently available info or `complete` for complete info.
+* `infoType` String. Values can be either 'available' for currently available info or `complete` for complete info.
 
 Returns `Promise<Object>` - GPU Information as in [chromium's GPUInfo object](https://chromium.googlesource.com/chromium/src.git/+/66.0.3359.181/gpu/config/gpu_info.cc). It contains the version and driver information that's shown on `chrome://gpu` page.
 

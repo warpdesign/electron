@@ -838,8 +838,8 @@ describe('app module', () => {
         const activeDevice = gpuInfo.gpuDevice.find((device) => {
           return device.active === true
         })
-  expect(activeDevice).to.be.an('object')
-  expect(activeDevice)
+        expect(activeDevice).to.be.an('object')
+        expect(activeDevice)
       .to.have.property('deviceId')
       .that.is.a('number')
       .not.lessThan(0)
@@ -856,7 +856,7 @@ describe('app module', () => {
     })
 
     it('fails for invalid info_type', (done) => {
-      app.getGPUInfo('invalid').catch(()=> {
+      app.getGPUInfo('invalid').catch(() => {
         done()
       })
     })

@@ -156,8 +156,6 @@ class App : public AtomBrowserClient::Delegate,
   // content::GpuDataManagerObserver:
   void OnGpuProcessCrashed(base::TerminationStatus status) override;
 
-  void OnGpuInfoUpdate() override;
-
   // content::BrowserChildProcessObserver:
   void BrowserChildProcessLaunchedAndConnected(
       const content::ChildProcessData& data) override;
@@ -200,8 +198,7 @@ class App : public AtomBrowserClient::Delegate,
 
   std::vector<mate::Dictionary> GetAppMetrics(v8::Isolate* isolate);
   v8::Local<v8::Value> GetGPUFeatureStatus(v8::Isolate* isolate);
-  util::Promise* GetGPUInfo(const std::string& info_type);
-  bool NeedsCompleteGpuInfoCollection() const;
+  util::Promise* GetGPUInfo(v8::Isolate* isolate, const std::string& info_type);
   void EnableMixedSandbox(mate::Arguments* args);
 
 #if defined(OS_MACOSX)
@@ -231,10 +228,6 @@ class App : public AtomBrowserClient::Delegate,
   base::CancelableTaskTracker cancelable_task_tracker_;
 
   base::FilePath app_path_;
-
-  util::Promise* gpuinfo_promise_;
-  bool has_complete_gpu_info_;
-  bool is_fetching_gpuinfo_;
 
   using ProcessMetricMap =
       std::unordered_map<base::ProcessId, std::unique_ptr<atom::ProcessMetric>>;
