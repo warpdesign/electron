@@ -832,8 +832,8 @@ describe('app module', () => {
   })
 
   describe('getGPUInfo() API', () => {
-    it('succeeds with available GPUInfo', (done) => {
-      app.getGPUInfo('available').then((gpuInfo) => {
+    it('succeeds with basic GPUInfo', (done) => {
+      app.getGPUInfo('basic').then((gpuInfo) => {
         // Devices information is always present in the available info
         const activeDevice = gpuInfo.gpuDevice.find((device) => {
           return device.active === true
