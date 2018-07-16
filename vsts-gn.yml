@@ -19,7 +19,7 @@ steps:
     ninja -C src/out/Default electron:electron_app
   name: Ninja_build
 
-- bash:
+- bash: |
     name: Test
     environment:
       MOCHA_FILE: junit/test-results.xml
