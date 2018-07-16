@@ -8,9 +8,9 @@ steps:
 
 - bash: |
     gclient config \
-      --name "src/electron"
-      --unmanaged
-      --cache-dir "/Users/electron/libcc_cache"
+      --name "src/electron" \
+      --unmanaged \
+      --cache-dir "/Users/electron/libcc_cache" \
       "https://github.com/electron/electron"
     gclient sync --with_branch_heads --with_tags
   name: gclient_sync
